@@ -679,14 +679,14 @@ void BluetoothKeyboardService::startServiceM()
             hidControlPointCharacteristic,
             inputReportCharacteristic};
 
-    ble.gap().onConnectionM(this, &BluetoothMouseService::onConnection);
-    ble.gap().onDisconnection(this, &BluetoothMouseService::onDisconnection);
+    ble.gap().onConnectionM(this, &BluetoothKeyboardService::onConnection);
+    ble.gap().onDisconnection(this, &BluetoothKeyboardService::onDisconnection);
 
     GattService mouseService(GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE, mouseCharacteristics, sizeof(mouseCharacteristics) / sizeof(GattCharacteristic *));
 
     ble.gattServer().addService(mouseService);
 
-    ble.gattServer().onDataSentM(this, &BluetoothMouseService::onDataSent);
+    ble.gattServer().onDataSentM(this, &BluetoothKeyboardService::onDataSent);
 }
 
 
@@ -732,7 +732,7 @@ void BluetoothKeyboardService::startReportTickerM()
     {
         return;
     }
-    reportTicker.attach_us(this, &BluetoothMouseService::sendCallbackM, 24000);
+    reportTicker.attach_us(this, &BluetoothKeyboardService::sendCallbackM, 24000);
     reportTickerIsActive = true;
 }
 
