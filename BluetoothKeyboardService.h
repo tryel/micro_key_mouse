@@ -270,6 +270,7 @@ private:
     bool sendKeyUp = false;
 
     void onConnection(const Gap::ConnectionCallbackParams_t *params);
+    void onConnectionM(const Gap::ConnectionCallbackParams_t *params);
     void onDisconnection(const Gap::DisconnectionCallbackParams_t *params);
 
     GattCharacteristic *protocolModeCharacteristic;
@@ -283,9 +284,13 @@ private:
 
     void startReportTicker();
 
+    void startReportTickerM();
+
     void stopReportTicker();
 
     void onDataSent(unsigned count);
+
+    void onDataSentM(unsigned count);
 
     void sendCallback();
 
@@ -294,6 +299,10 @@ private:
     void startAdvertise();
 
     void startService();
+
+    void startAdvertiseM();
+
+    void startServiceM();
 };
 
 #endif /* __BLEKEYBOARD_H__ */
