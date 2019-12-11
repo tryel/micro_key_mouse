@@ -679,14 +679,14 @@ void BluetoothKeyboardService::startServiceM()
             hidControlPointCharacteristic,
             inputReportCharacteristic};
 
-    ble.gap().onConnectionM(this, &BluetoothKeyboardService::onConnection);
+    ble.gap().onConnection(this, &BluetoothKeyboardService::onConnectionM);
     ble.gap().onDisconnection(this, &BluetoothKeyboardService::onDisconnection);
 
     GattService mouseService(GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE, mouseCharacteristics, sizeof(mouseCharacteristics) / sizeof(GattCharacteristic *));
 
     ble.gattServer().addService(mouseService);
 
-    ble.gattServer().onDataSentM(this, &BluetoothKeyboardService::onDataSent);
+    ble.gattServer().onDataSent(this, &BluetoothKeyboardService::onDataSentM);
 }
 
 
