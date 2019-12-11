@@ -1,6 +1,5 @@
 // Auto-generated. Do not edit.
 
-
     declare enum ButtonState
     {
         BUTTON_UP = 0,
