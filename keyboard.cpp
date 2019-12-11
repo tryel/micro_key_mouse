@@ -41,17 +41,5 @@ void keyboardSendText(StringData *data)
     }
 }
 
-//%
-    void mouseSpeed(int x, int y, int wheel)
-    {
-        BluetoothKeyboardService *pMouse = getKeyboard();
-        pMouse->setSpeed(x, y, wheel);
-    }
 
-//%
-    void mouseButton(MouseButton button, ButtonState state)
-    {
-        BluetoothKeyboardService *pMouse = getKeyboard();
-        pMouse->setButton(button, state);
-    }
 }
