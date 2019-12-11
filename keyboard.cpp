@@ -16,6 +16,15 @@ BluetoothKeyboardService *getKeyboard()
     return pKeyboardInstance;
 }
 
+BluetoothKeyboardService *getMouse()
+{
+    if (pKeyboardInstance == nullptr)
+    {
+        pKeyboardInstance = new BluetoothKeyboardService(uBit.ble);
+    }
+    return pKeyboardInstance;
+}
+
 //%
 void keyboardSendOneKeyCode(Modifier modifier, uint8_t keyCode)
 {
@@ -44,14 +53,14 @@ void keyboardSendText(StringData *data)
 //%
 void mouseSpeed(int x, int y, int wheel)
 {
-    BluetoothKeyboardService *pMouse = getKeyboard();
+    BluetoothKeyboardService *pMouse = getMouse();
     pMouse->setSpeed(x, y, wheel);
 }
 
 //%
 void mouseButton(MouseButton button, ButtonState state)
 {
-    BluetoothKeyboardService *pMouse = getKeyboard();
+    BluetoothKeyboardService *pMouse = getMouse();
     pMouse->setButton(button, state);
 }
 }
