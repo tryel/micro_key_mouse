@@ -188,12 +188,6 @@ class BluetoothKeyboardService
     BluetoothKeyboardService(BLEDevice *device);
 
     /**
-     * Constructor
-     * @param dev BLE device
-     */
-    BluetoothKeyboardService(BLEDevice *device, String str);
-
-    /**
      * Send a BLE Keyboard key-down message
      * @param modifier modifier key combination
      * @param keyCode key code of US Keyboard

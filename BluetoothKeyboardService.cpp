@@ -104,12 +104,6 @@ BluetoothKeyboardService::BluetoothKeyboardService(BLEDevice *dev) : ble(*dev)
     startAdvertise();
 }
 
-BluetoothKeyboardService::BluetoothKeyboardService(BLEDevice *dev, String str) : ble(*dev)
-{
-    startServiceM();
-    startAdvertiseM();
-}
-
 void BluetoothKeyboardService::startService()
 {
     memset(inputReportData, 0, sizeof(inputReportData));

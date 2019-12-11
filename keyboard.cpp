@@ -45,7 +45,7 @@ void keyboardSendText(StringData *data)
     {
         if (pKeyboardInstance == nullptr)
         {
-            pKeyboardInstance = new BluetoothMouseService(uBit.ble, "");
+            pKeyboardInstance = new BluetoothMouseService(uBit.ble);
         }
         return pKeyboardInstance;
     }
