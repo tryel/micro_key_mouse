@@ -41,26 +41,17 @@ void keyboardSendText(StringData *data)
     }
 }
 
-    BluetoothKeyboardService *getMouse()
-    {
-        if (pKeyboardInstance == nullptr)
-        {
-            pKeyboardInstance = new BluetoothMouseService(uBit.ble);
-        }
-        return pKeyboardInstance;
-    }
-
 //%
     void mouseSpeed(int x, int y, int wheel)
     {
-        BluetoothKeyboardService *pMouse = getMouse();
+        BluetoothKeyboardService *pMouse = getKeyboard();
         pMouse->setSpeed(x, y, wheel);
     }
 
 //%
     void mouseButton(MouseButton button, ButtonState state)
     {
-        BluetoothKeyboardService *pMouse = getMouse();
+        BluetoothKeyboardService *pMouse = getKeyboard();
         pMouse->setButton(button, state);
     }
 }

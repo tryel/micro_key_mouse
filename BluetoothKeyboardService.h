@@ -257,8 +257,8 @@ class BluetoothKeyboardService
     uint8_t buttonsState;
     uint8_t speed[3];
 
-    void onConnectionM(const Gap::ConnectionCallbackParams_t *params);
-    void onDisconnectionM(const Gap::DisconnectionCallbackParams_t *params);
+//    void onConnectionM(const Gap::ConnectionCallbackParams_t *params);
+//    void onDisconnectionM(const Gap::DisconnectionCallbackParams_t *params);
 
     ManagedString keyBuffer;
     Modifier previousModifier;
@@ -289,20 +289,20 @@ class BluetoothKeyboardService
 
     void startService();
 
-    void startReportTickerM();
-
-    void stopReportTickerM();
-
-    void onDataSentM(unsigned count);
-
-    void sendCallbackM();
-
-    void startAdvertiseM();
-
-    void startServiceM();
-
-
-
+//
+//
+//    void startReportTickerM();
+//
+//    void stopReportTickerM();
+//
+//    void onDataSentM(unsigned count);
+//
+//    void sendCallbackM();
+//
+//    void startAdvertiseM();
+//
+//    void startServiceM();
+//
 };
 
 #endif /* __BLEKEYBOARD_H__ */
