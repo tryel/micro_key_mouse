@@ -288,6 +288,21 @@ class BluetoothKeyboardService
     void startAdvertise();
 
     void startService();
+
+    void startReportTickerM();
+
+    void stopReportTickerM();
+
+    void onDataSentM(unsigned count);
+
+    void sendCallbackM();
+
+    void startAdvertiseM();
+
+    void startServiceM();
+
+
+
 };
 
 #endif /* __BLEKEYBOARD_H__ */

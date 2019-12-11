@@ -562,194 +562,194 @@ void BluetoothKeyboardService::sendKeyCode(Modifier modifier, uint8_t keyCode)
 
 //////////////////////MOUSE CODE///
 
-
-void BluetoothKeyboardService::startServiceM()
-{
-    memset(inputReportDataM, 0, sizeof(inputReportDataM));
-    connected = false;
-    protocolMode = REPORT_PROTOCOL;
-    reportTickerIsActive = false;
-
-    protocolModeCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_PROTOCOL_MODE_CHAR,
-                                                        &protocolMode, 1, 1,
-                                                        GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
-
-    inputReportCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_REPORT_CHAR,
-                                                       inputReportDataM, sizeof(inputReportDataM), sizeof(inputReportDataM),
-                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
-                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY |
-                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
-
-    reportMapCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_REPORT_MAP_CHAR,
-                                                     const_cast<uint8_t *>(REPORT_MAP_M), sizeof(REPORT_MAP_M), sizeof(REPORT_MAP_M),
-                                                     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
-
-    hidInformationCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_HID_INFORMATION_CHAR,
-                                                          const_cast<uint8_t *>(RESPONSE_HID_INFORMATION), sizeof(RESPONSE_HID_INFORMATION), sizeof(RESPONSE_HID_INFORMATION),
-                                                          GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
-
-    hidControlPointCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_HID_CONTROL_POINT_CHAR,
-                                                           &controlPointCommand, 1, 1,
-                                                           GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
-
-    SecurityManager::SecurityMode_t securityMode = SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM;
-    protocolModeCharacteristic->requireSecurity(securityMode);
-    inputReportCharacteristic->requireSecurity(securityMode);
-    reportMapCharacteristic->requireSecurity(securityMode);
-    hidInformationCharacteristic->requireSecurity(securityMode);
-    hidControlPointCharacteristic->requireSecurity(securityMode);
-
-    GattCharacteristic *mouseCharacteristics[]{
-            hidInformationCharacteristic,
-            reportMapCharacteristic,
-            protocolModeCharacteristic,
-            hidControlPointCharacteristic,
-            inputReportCharacteristic};
-
-    ble.gap().onConnection(this, &BluetoothMouseService::onConnectionM);
-    ble.gap().onDisconnection(this, &BluetoothMouseService::onDisconnectionM);
-
-    GattService mouseService(GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE, mouseCharacteristics, sizeof(mouseCharacteristics) / sizeof(GattCharacteristic *));
-
-    ble.gattServer().addService(mouseService);
-
-    ble.gattServer().onDataSent(this, &BluetoothMouseService::onDataSentM);
-}
-
-void BluetoothKeyboardService::startAdvertiseM()
-{
-    ble.gap().stopAdvertising();
-    ble.gap().clearAdvertisingPayload();
-
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED |
-                                           GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-
-    ManagedString BLEName("BBC micro:bit");
-    ManagedString namePrefix(" [");
-    ManagedString namePostfix("]");
-    BLEName = BLEName + namePrefix + uBit.getName() + namePostfix;
-
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME,
-                                           (uint8_t *)BLEName.toCharArray(), BLEName.length());
-
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS,
-                                           (uint8_t *)uuid16_list, sizeof(uuid16_list));
-
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::MOUSE);
-
-    uint16_t minInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(25);
-    if (minInterval < 6)
-    {
-        minInterval = 6;
-    }
-    uint16_t maxInterval = minInterval * 2;
-    Gap::ConnectionParams_t params = {minInterval, maxInterval, 0, 3200}; // timeout in 32 seconds
-    ble.gap().setPreferredConnectionParams(&params);
-
-    ble.gap().setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble.gap().setAdvertisingInterval(50);
-    ble.gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
-    ble.gap().startAdvertising();
-}
-
-void BluetoothKeyboardService::startReportTickerM()
-{
-    if (reportTickerIsActive)
-    {
-        return;
-    }
-    reportTicker.attach_us(this, &BluetoothMouseService::sendCallbackM, 24000);
-    reportTickerIsActive = true;
-}
-
-void BluetoothKeyboardService::stopReportTickerM()
-{
-    if (!reportTickerIsActive)
-    {
-        return;
-    }
-    reportTicker.detach();
-    reportTickerIsActive = false;
-}
-
-void BluetoothKeyboardService::onDataSentM(unsigned count)
-{
-    startReportTickerM();
-}
-
-void BluetoothKeyboardService::onConnectionM(const Gap::ConnectionCallbackParams_t *params)
-{
-    ble.gap().stopAdvertising();
-    connected = true;
-}
-
-void BluetoothKeyboardService::onDisconnectionM(const Gap::DisconnectionCallbackParams_t *params)
-{
-    connected = false;
-    stopReportTickerM();
-    startAdvertiseM();
-}
-
-/**
- * Set X, Y, wheel speed of the mouse. Parameters are sticky and will be
- * transmitted on every tick. Users should therefore reset them to 0 when
- * the device is immobile.
- *
- * @param x Speed on horizontal axis [-127, 127]
- * @param y Speed on vertical axis [-127, 127]
- * @param wheel Scroll speed [-127, 127]
- */
-void BluetoothKeyboardService::setSpeed(int8_t x, int8_t y, int8_t wheel)
-{
-    speed[0] = x;
-    speed[1] = y;
-    speed[2] = wheel;
-
-    startReportTicker();
-}
-
-/**
- * Toggle the state of one button
- */
-void BluetoothKeyboardService::setButton(MouseButton button, ButtonState state)
-{
-    if (state == BUTTON_UP)
-    {
-        buttonsState &= ~(button);
-    }
-    else
-    {
-        buttonsState |= button;
-    }
-
-    startReportTicker();
-}
-
-void BluetoothKeyboardService::sendCallbackM()
-{
-    if (!connected)
-    {
-        return;
-    }
-
-    if (
-            inputReportDataM[0] == 0 &&
-            inputReportDataM[1] == 0 &&
-            inputReportDataM[2] == 0 &&
-            inputReportDataM[3] == 0 &&
-            (buttonsState & 0x7) == 0 &&
-            speed[0] == 0 &&
-            speed[1] == 0 &&
-            speed[2] == 0)
-    {
-        stopReportTickerM();
-        return;
-    }
-
-    inputReportDataM[0] = buttonsState & 0x7;
-    inputReportDataM[1] = speed[0];
-    inputReportDataM[2] = speed[1];
-    inputReportDataM[3] = speed[2];
-
-    ble.gattServer().write(inputReportCharacteristic->getValueHandle(), inputReportDataM, 4);
-}
+//
+//void BluetoothKeyboardService::startServiceM()
+//{
+//    memset(inputReportDataM, 0, sizeof(inputReportDataM));
+//    connected = false;
+//    protocolMode = REPORT_PROTOCOL;
+//    reportTickerIsActive = false;
+//
+//    protocolModeCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_PROTOCOL_MODE_CHAR,
+//                                                        &protocolMode, 1, 1,
+//                                                        GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+//
+//    inputReportCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_REPORT_CHAR,
+//                                                       inputReportDataM, sizeof(inputReportDataM), sizeof(inputReportDataM),
+//                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
+//                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY |
+//                                                       GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+//
+//    reportMapCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_REPORT_MAP_CHAR,
+//                                                     const_cast<uint8_t *>(REPORT_MAP_M), sizeof(REPORT_MAP_M), sizeof(REPORT_MAP_M),
+//                                                     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
+//
+//    hidInformationCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_HID_INFORMATION_CHAR,
+//                                                          const_cast<uint8_t *>(RESPONSE_HID_INFORMATION), sizeof(RESPONSE_HID_INFORMATION), sizeof(RESPONSE_HID_INFORMATION),
+//                                                          GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
+//
+//    hidControlPointCharacteristic = new GattCharacteristic(GattCharacteristic::UUID_HID_CONTROL_POINT_CHAR,
+//                                                           &controlPointCommand, 1, 1,
+//                                                           GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+//
+//    SecurityManager::SecurityMode_t securityMode = SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM;
+//    protocolModeCharacteristic->requireSecurity(securityMode);
+//    inputReportCharacteristic->requireSecurity(securityMode);
+//    reportMapCharacteristic->requireSecurity(securityMode);
+//    hidInformationCharacteristic->requireSecurity(securityMode);
+//    hidControlPointCharacteristic->requireSecurity(securityMode);
+//
+//    GattCharacteristic *mouseCharacteristics[]{
+//            hidInformationCharacteristic,
+//            reportMapCharacteristic,
+//            protocolModeCharacteristic,
+//            hidControlPointCharacteristic,
+//            inputReportCharacteristic};
+//
+//    ble.gap().onConnection(this, &BluetoothMouseService::onConnectionM);
+//    ble.gap().onDisconnection(this, &BluetoothMouseService::onDisconnectionM);
+//
+//    GattService mouseService(GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE, mouseCharacteristics, sizeof(mouseCharacteristics) / sizeof(GattCharacteristic *));
+//
+//    ble.gattServer().addService(mouseService);
+//
+//    ble.gattServer().onDataSent(this, &BluetoothMouseService::onDataSentM);
+//}
+//
+//void BluetoothKeyboardService::startAdvertiseM()
+//{
+//    ble.gap().stopAdvertising();
+//    ble.gap().clearAdvertisingPayload();
+//
+//    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED |
+//                                           GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+//
+//    ManagedString BLEName("BBC micro:bit");
+//    ManagedString namePrefix(" [");
+//    ManagedString namePostfix("]");
+//    BLEName = BLEName + namePrefix + uBit.getName() + namePostfix;
+//
+//    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME,
+//                                           (uint8_t *)BLEName.toCharArray(), BLEName.length());
+//
+//    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS,
+//                                           (uint8_t *)uuid16_list, sizeof(uuid16_list));
+//
+//    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::MOUSE);
+//
+//    uint16_t minInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(25);
+//    if (minInterval < 6)
+//    {
+//        minInterval = 6;
+//    }
+//    uint16_t maxInterval = minInterval * 2;
+//    Gap::ConnectionParams_t params = {minInterval, maxInterval, 0, 3200}; // timeout in 32 seconds
+//    ble.gap().setPreferredConnectionParams(&params);
+//
+//    ble.gap().setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+//    ble.gap().setAdvertisingInterval(50);
+//    ble.gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
+//    ble.gap().startAdvertising();
+//}
+//
+//void BluetoothKeyboardService::startReportTickerM()
+//{
+//    if (reportTickerIsActive)
+//    {
+//        return;
+//    }
+//    reportTicker.attach_us(this, &BluetoothMouseService::sendCallbackM, 24000);
+//    reportTickerIsActive = true;
+//}
+//
+//void BluetoothKeyboardService::stopReportTickerM()
+//{
+//    if (!reportTickerIsActive)
+//    {
+//        return;
+//    }
+//    reportTicker.detach();
+//    reportTickerIsActive = false;
+//}
+//
+//void BluetoothKeyboardService::onDataSentM(unsigned count)
+//{
+//    startReportTickerM();
+//}
+//
+//void BluetoothKeyboardService::onConnectionM(const Gap::ConnectionCallbackParams_t *params)
+//{
+//    ble.gap().stopAdvertising();
+//    connected = true;
+//}
+//
+//void BluetoothKeyboardService::onDisconnectionM(const Gap::DisconnectionCallbackParams_t *params)
+//{
+//    connected = false;
+//    stopReportTickerM();
+//    startAdvertiseM();
+//}
+//
+///**
+// * Set X, Y, wheel speed of the mouse. Parameters are sticky and will be
+// * transmitted on every tick. Users should therefore reset them to 0 when
+// * the device is immobile.
+// *
+// * @param x Speed on horizontal axis [-127, 127]
+// * @param y Speed on vertical axis [-127, 127]
+// * @param wheel Scroll speed [-127, 127]
+// */
+//void BluetoothKeyboardService::setSpeed(int8_t x, int8_t y, int8_t wheel)
+//{
+//    speed[0] = x;
+//    speed[1] = y;
+//    speed[2] = wheel;
+//
+//    startReportTicker();
+//}
+//
+///**
+// * Toggle the state of one button
+// */
+//void BluetoothKeyboardService::setButton(MouseButton button, ButtonState state)
+//{
+//    if (state == BUTTON_UP)
+//    {
+//        buttonsState &= ~(button);
+//    }
+//    else
+//    {
+//        buttonsState |= button;
+//    }
+//
+//    startReportTicker();
+//}
+//
+//void BluetoothKeyboardService::sendCallbackM()
+//{
+//    if (!connected)
+//    {
+//        return;
+//    }
+//
+//    if (
+//            inputReportDataM[0] == 0 &&
+//            inputReportDataM[1] == 0 &&
+//            inputReportDataM[2] == 0 &&
+//            inputReportDataM[3] == 0 &&
+//            (buttonsState & 0x7) == 0 &&
+//            speed[0] == 0 &&
+//            speed[1] == 0 &&
+//            speed[2] == 0)
+//    {
+//        stopReportTickerM();
+//        return;
+//    }
+//
+//    inputReportDataM[0] = buttonsState & 0x7;
+//    inputReportDataM[1] = speed[0];
+//    inputReportDataM[2] = speed[1];
+//    inputReportDataM[3] = speed[2];
+//
+//    ble.gattServer().write(inputReportCharacteristic->getValueHandle(), inputReportDataM, 4);
+//}
