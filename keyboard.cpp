@@ -20,7 +20,7 @@ BluetoothKeyboardService *getMouse()
 {
     if (pKeyboardInstance == nullptr)
     {
-        pKeyboardInstance = new BluetoothKeyboardService(uBit.ble);
+        pKeyboardInstance = new BluetoothKeyboardService(uBit.ble, "M");
     }
     return pKeyboardInstance;
 }

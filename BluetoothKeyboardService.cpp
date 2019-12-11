@@ -68,6 +68,16 @@ BluetoothKeyboardService::BluetoothKeyboardService(BLEDevice *dev) : ble(*dev)
     startAdvertise();
 }
 
+/**
+ * Constructor
+ * @param dev BLE device
+ */
+BluetoothKeyboardService::BluetoothKeyboardService(BLEDevice *dev, string s) : ble(*dev)
+{
+    startService();
+    startAdvertise();
+}
+
 void BluetoothKeyboardService::startService()
 {
     memset(inputReportData, 0, sizeof(inputReportData));
