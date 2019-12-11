@@ -521,3 +521,68 @@ void BluetoothKeyboardService::sendKeyCode(Modifier modifier, uint8_t keyCode)
         sendKeyUp = true;
     }
 }
+
+
+/**
+ * Set X, Y, wheel speed of the mouse. Parameters are sticky and will be
+ * transmitted on every tick. Users should therefore reset them to 0 when
+ * the device is immobile.
+ *
+ * @param x Speed on horizontal axis [-127, 127]
+ * @param y Speed on vertical axis [-127, 127]
+ * @param wheel Scroll speed [-127, 127]
+ */
+void BluetoothKeyboardService::setSpeed(int8_t x, int8_t y, int8_t wheel)
+{
+    speed[0] = x;
+    speed[1] = y;
+    speed[2] = wheel;
+
+    startReportTicker();
+}
+
+/**
+ * Toggle the state of one button
+ */
+void BluetoothKeyboardService::setButton(MouseButton button, ButtonState state)
+{
+    if (state == BUTTON_UP)
+    {
+        buttonsState &= ~(button);
+    }
+    else
+    {
+        buttonsState |= button;
+    }
+
+    startReportTicker();
+}
+
+void BluetoothKeyboardService::sendCallbackM()
+{
+    if (!connected)
+    {
+        return;
+    }
+
+    if (
+            inputReportDataM[0] == 0 &&
+            inputReportDataM[1] == 0 &&
+            inputReportDataM[2] == 0 &&
+            inputReportDataM[3] == 0 &&
+            (buttonsState & 0x7) == 0 &&
+            speed[0] == 0 &&
+            speed[1] == 0 &&
+            speed[2] == 0)
+    {
+        stopReportTicker();
+        return;
+    }
+
+    inputReportDataM[0] = buttonsState & 0x7;
+    inputReportDataM[1] = speed[0];
+    inputReportDataM[2] = speed[1];
+    inputReportDataM[3] = speed[2];
+
+    ble.gattServer().write(inputReportCharacteristic->getValueHandle(), inputReportDataM, 4);
+}
