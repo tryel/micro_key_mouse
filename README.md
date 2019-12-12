@@ -18,8 +18,7 @@ To Send `Hello World!` to the paired host, place block like this:
 bluetooth.keyboardSendText("Hello World!");
 ```
 
-##
- Usage Mouse
+## Usage Mouse
 Place a ``||bluetooth start mouse service||`` block in your program to enable Bluetooth LE Mouse.
 With this block, the `micro:bit` starts advertise BLE packets as a Mouse peripheral.
 
